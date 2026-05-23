@@ -75,12 +75,21 @@ def run_inference_handler(payload: Dict[str, str | List[Dict[str, Any]]]) -> Dic
     messages = payload.get("messages", [])
 
     text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    print("\nPROMPT SENT TO MODEL:")
+    print(text)
+    print("\nEND PROMPT\n")
     inputs = tokenizer(text, return_tensors="pt").to(model.device)
 
-    output = model.generate(**inputs, max_new_tokens=32000)
+    output = model.generate(
+        **inputs,
+        max_new_tokens=40,
+        do_sample=False,
+        repetition_penalty=1.2,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.eos_token_id,
+    )
     result = tokenizer.decode(output[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
 
-    print(result)
 
     # running_inference = iii.trigger(
     #     {
@@ -96,7 +105,9 @@ def run_inference_handler(payload: Dict[str, str | List[Dict[str, Any]]]) -> Dic
     #     }
     # )
     # result["running_inference"] = new_result
-    return result
+    return {
+        "response": result
+    }
 
 # def add_handler(payload: dict) -> dict:
 #     a = payload.get("a", 0)

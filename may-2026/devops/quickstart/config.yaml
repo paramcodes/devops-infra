@@ -41,6 +41,6 @@ workers:
         - DELETE
         - OPTIONS
   - name: inference-worker
-    worker_path: /Users/anuran/Alchemyst/hiring/may-2026/devops/quickstart/workers/inference-worker
+    worker_path: ./workers/inference-worker
   - name: caller-worker
-    worker_path: /Users/anuran/Alchemyst/hiring/may-2026/devops/quickstart/workers/caller-worker
+    worker_path: ./workers/caller-worker

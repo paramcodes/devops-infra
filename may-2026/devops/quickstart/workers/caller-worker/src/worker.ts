@@ -6,18 +6,23 @@ const logger = new Logger();
 iii.registerFunction(
   'inference::get_response',
   async (payload: { messages: Record<string, any> } & Record<string, any>) => {
-    logger.info('inference::get_response called in TypeScript', payload);
+    logger.info("About to call inference worker");
 
-    const result = await iii.trigger({
-      function_id: 'inference::run_inference',
-      payload,
-    });
+try {
+  const result = await iii.trigger({
+    function_id: 'inference::run_inference',
+    payload,
+  });
 
-    return {
-      ...result,
-      success:
-        "You've connected two workers and they're interoperating seamlessly, now let's add a few more workers to expand this project's functionality.",
-    };
+  logger.info("Inference worker responded", result);
+
+  return {
+    ...result,
+  };
+} catch (err) {
+  logger.error("RPC FAILED", err);
+  throw err;
+}
   },
 );
 
