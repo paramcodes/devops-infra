@@ -2,6 +2,10 @@
 
 This project deploys a distributed inference system using AWS and the iii quickstart project. The system is split across multiple virtual machines inside a private network and exposes model inference through a JSON HTTP API.
 
+[Article](https://paramcodes.notion.site/Built-a-Distributed-multi-VMs-system-36a5d8f3b9ed80029563e8033dc98554)
+
+[Workflow Explaination Video](https://youtu.be/_PA5omBUPgo)
+
 ## Architecture
 
 The system is deployed across two EC2 instances inside a custom VPC.
