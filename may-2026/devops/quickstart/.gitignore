@@ -159,6 +159,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.venv311
 
 # Spyder project settings
 .spyderproject
@@ -383,3 +384,11 @@ target
 
 .vscode
 .mypy*
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+
+# pem key
+*.pem
