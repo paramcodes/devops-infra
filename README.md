@@ -254,66 +254,221 @@ curl -X POST http://127.0.0.1:3111/v1/chat/completions \
 
 ## Challenges Faced & Debugging
 
-### 1. SSH Connectivity Issues
+### 1. SSH & Networking Issues
 
-**Problem:**
+**Problem**
 
-* Could not SSH into instances
+Initially, SSH access and inter-machine connectivity failed due to networking and security configuration problems.
 
-**Fix:**
+**Root Cause**
 
-* Corrected Security Groups and Network ACL configuration
-* Verified port `22` access
+* Incorrect Security Group configuration
+* Missing/incorrect routing assumptions
+* Confusion between public vs private network reachability
 
-### 2. RPC Connectivity Failure
+**Fix**
 
-**Problem:**
+* Corrected inbound SSH rules (`22`)
+* Verified connectivity using `nmap`, `nc`, and `curl`
+* Ensured API VM could communicate with inference VM through private networking
 
-* Workers could not communicate
+**Learning**
 
-**Fix:**
+This reinforced the importance of validating network paths and debugging layer-by-layer instead of assuming application-level failures.
 
-* Configured private subnet networking
-* Verified RPC communication on port `49134`
-* Validated connectivity using `nc`
+---
 
-### 3. Storage Issues
+### 2. Worker Registration & Engine Routing Issues
 
-**Problem:**
+**Problem**
+
+The HTTP route `/v1/chat/completions` initially returned `404`, and later RPC calls failed with:
+
+```text
+Function inference::run_inference not found
+```
+
+**Root Cause**
+
+Workers were connected to the wrong iii engine instance and function registration was happening against an incorrect endpoint.
+
+For example, the `caller-worker` was temporarily registered against the inference engine instead of the API engine, which caused route registration failures.
+
+**Fix**
+
+* Verified engine endpoints (`localhost` vs private VM IP)
+* Corrected `III_URL` environment configuration
+* Restarted workers with correct engine targets
+* Verified function registration logs
+
+**Learning**
+
+In distributed systems, a process being “alive” does not imply the system is wired correctly. Service registration and network topology must also be validated.
+
+---
+
+### 3. Worker Path / Configuration Issues
+
+**Problem**
+
+Worker discovery and startup behavior initially failed because of incorrect assumptions around worker locations and runtime configuration.
+
+**Root Cause**
+
+The iii engine depends on correct worker paths and runtime configuration inside `config.yaml` and worker definitions.
+
+Incorrect worker configuration prevented expected registration and startup behavior.
+
+**Fix**
+
+* Updated worker paths in configuration
+* Validated worker runtime configuration
+* Started workers manually for debugging before automating startup
+
+**Learning**
+
+Configuration management becomes increasingly important in distributed systems because small path/config mismatches can cascade into runtime failures.
+
+---
+
+### 4. RPC Communication Failures
+
+**Problem**
+
+API worker could not communicate with inference worker.
+
+**Root Cause**
+
+RPC port (`49134`) accessibility and routing assumptions were incorrect during early setup.
+
+**Fix**
+
+* Restricted inference communication to private networking
+* Verified RPC communication using:
+
+```bash
+nc -vz <private-ip> 49134
+```
+
+* Confirmed engine registration and connectivity
+
+**Learning**
+
+Connectivity debugging should begin at the transport layer (ports/network) before moving into application logic.
+
+---
+
+### 5. Storage Constraints
+
+**Problem**
+
+Dependency installation failed with:
 
 ```text
 No space left on device
 ```
 
-**Fix:**
+while installing PyTorch and model dependencies.
 
-* Expanded root volume from `8GB → 20GB`
-* Resized filesystem
+**Root Cause**
 
-### 4. Memory Constraints
+Default EC2 root volume size (`8GB`) was insufficient for Python dependencies, model weights, and inference tooling.
 
-**Problem:**
+**Fix**
 
-* Model loading caused OOM conditions
+* Increased volume size to `20GB`
+* Resized partition and filesystem
+* Updated Terraform configuration to provision larger root volumes by default
 
-**Fix:**
+**Learning**
 
-* Added swap memory
-* Reduced resource pressure during inference
-
-### 5. Worker Registration / Routing
-
-**Problem:**
-
-* RPC function registration failures
-* Incorrect engine routing
-
-**Fix:**
-
-* Corrected worker-to-engine connections
-* Verified function registration and endpoint mapping
+Infrastructure defaults are often unsuitable for ML workloads and should be sized according to workload requirements.
 
 ---
+
+### 6. Memory Constraints & OOM Failures
+
+**Problem**
+
+Inference worker crashed during model loading.
+
+**Root Cause**
+
+Model loading exceeded available RAM on `t3.micro`, causing OOM kills.
+
+**Fix**
+
+* Investigated memory failures using `dmesg`
+* Added swap memory
+* Used a smaller quantized GGUF model (`Gemma 3 270M Q8`)
+* Reduced generation complexity during testing
+
+**Learning**
+
+Model-serving systems are constrained as much by hardware economics as by software correctness.
+
+---
+
+### 7. API Routing & HTTP Trigger Issues
+
+**Problem**
+
+The API initially returned:
+
+```text
+404 Not Found
+```
+
+despite the service running.
+
+**Root Cause**
+
+The HTTP trigger was not registered because the worker responsible for route registration was connected to the wrong engine.
+
+**Fix**
+
+* Verified worker registration logs
+* Confirmed:
+
+```text
+POST /v1/chat/completions → http::run_inference_over_http
+```
+
+* Retested using `curl`
+
+**Learning**
+
+A healthy process does not guarantee a healthy request path. Route registration must be verified explicitly.
+
+---
+
+### 8. End-to-End Inference Timeout Tradeoff
+
+**Problem**
+
+Inference requests occasionally timed out on constrained hardware.
+
+**Root Cause**
+
+CPU-only inference on a small EC2 instance (`t3.micro`) resulted in slow model execution.
+
+**Fix**
+
+* Increased timeout values
+* Reduced generation size
+* Verified prompt execution reached the inference layer
+
+Example proof:
+
+```text
+PROMPT SENT TO MODEL:
+Explain Redis in simple words
+END PROMPT
+```
+
+**Learning**
+
+For constrained systems, validating architecture correctness can be more important than optimizing latency during early prototyping.
 
 ## Tradeoffs
 
