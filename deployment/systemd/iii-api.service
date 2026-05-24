@@ -1,0 +1,13 @@
+[Unit]
+Description=iii Engine (API VM)
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/devops-infra/may-2026/devops/quickstart
+ExecStart=/home/ec2-user/.local/bin/iii
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=Caller Worker
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/devops-infra/workers/caller-worker
+Environment=III_URL=ws://localhost:49134
+ExecStart=/home/ec2-user/.bun/bin/bun src/worker.ts
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

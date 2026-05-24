@@ -1,0 +1,14 @@
+[Unit]
+Description=Inference Worker
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/devops-infra/workers/inference-worker
+Environment=III_URL=ws://localhost:49134
+ExecStart=/home/ec2-user/devops-infra/workers/inference-worker/.venv311/bin/python inference_worker.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

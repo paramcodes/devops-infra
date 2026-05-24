@@ -162,6 +162,28 @@ inference_private_ip = 10.0.2.191
 ![t-output](<assets/Screenshot From 2026-05-24 10-34-39 (Edited).png>)
 ---
 
+## Deployment Configuration
+
+Systemd unit files are included under:
+
+```text
+deployment/systemd/
+```
+
+```bash
+sudo cp deployment/systemd/*.service /etc/systemd/system/
+
+sudo systemctl daemon-reload
+
+sudo systemctl enable iii-api
+sudo systemctl enable caller-worker
+sudo systemctl enable inference-worker
+
+sudo systemctl start iii-api
+sudo systemctl start caller-worker
+sudo systemctl start inference-worker
+```
+
 ## Deployment Steps
 
 ### 1. Clone Repository
