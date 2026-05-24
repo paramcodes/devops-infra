@@ -349,11 +349,13 @@ Screenshots included:
 ![subnet](assets/image-3.png)
 
 * EC2 instances
+
 | ![ec2](assets/image-4.png) | ![apivm](assets/image-5.png) |
 |-------------------------------|-------------------------------|
 | ![inference-vm](assets/image-6.png) | ![security-group](assets/image-7.png) |
 
 * Security groups
+
 | ![security-group](assets/image-8.png) | ![sg](assets/image-11.png) |
 |-------------------------------|-------------------------------|
 | ![api-sg](assets/image-9.png) | ![inference-sg](assets/image-10.png) |
